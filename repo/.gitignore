@@ -4,6 +4,6 @@ coverage/
 .DS_Store
 *.log
 data/
-exports/
+/exports/
 *.sqlite
 *.sqlite3

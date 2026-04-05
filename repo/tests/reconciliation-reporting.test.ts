@@ -130,9 +130,16 @@ describe('reconciliation, reporting, exports, and auditor read surfaces', () => 
       url: '/v1/reconciliation/records?page=1&pageSize=10&state=pending',
       headers: { authorization: `Bearer ${auditor.token}` }
     });
-    expect(auditorList.statusCode).toBe(200);
-    expect(auditorList.json().items).toHaveLength(1);
-    expect(auditorList.json().items[0].id).toBe(recordId);
+    expect(auditorList.statusCode).toBe(403);
+
+    const adminList = await app.inject({
+      method: 'GET',
+      url: '/v1/reconciliation/records?page=1&pageSize=10&state=pending',
+      headers: { authorization: `Bearer ${admin.token}` }
+    });
+    expect(adminList.statusCode).toBe(200);
+    expect(adminList.json().items).toHaveLength(1);
+    expect(adminList.json().items[0].id).toBe(recordId);
 
     const skipTransition = await app.inject({
       method: 'POST',
@@ -214,10 +221,17 @@ describe('reconciliation, reporting, exports, and auditor read surfaces', () => 
     expect(transitionAfterArchived.statusCode).toBe(409);
     expectErrorEnvelope(transitionAfterArchived, 'CONFLICT');
 
-    const detail = await app.inject({
+    const auditorDetail = await app.inject({
       method: 'GET',
       url: `/v1/reconciliation/records/${recordId}`,
       headers: { authorization: `Bearer ${auditor.token}` }
+    });
+    expect(auditorDetail.statusCode).toBe(403);
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/v1/reconciliation/records/${recordId}`,
+      headers: { authorization: `Bearer ${admin.token}` }
     });
     expect(detail.statusCode).toBe(200);
     expect(detail.json().record.state).toBe('archived');

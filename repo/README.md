@@ -103,6 +103,7 @@ Runtime config is process-environment only. Key values:
 - `EXPORT_DIR` (default: `./data/exports`)
 - `FACILITY_TIMEZONE` (required, IANA timezone)
 - `APP_ENCRYPTION_KEY_B64` (required; base64-decoded length must be 32 bytes)
+- `BOOTSTRAP_SECRET` (optional; required to enable `POST /v1/auth/bootstrap-admin`)
 - `SCHEDULER_ENABLED` (`true|false`, default `true`)
 
 `docker compose` generates an ephemeral encryption key if one is not provided.

@@ -135,6 +135,29 @@ export const registerAuthRoutes = async (fastify: FastifyInstance) => {
 
   // Explicitly admin-only bootstrap endpoint for local/dev initialization.
   fastify.post('/v1/auth/bootstrap-admin', async (request, reply) => {
+    if (!fastify.appConfig.bootstrapSecret) {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Bootstrap is disabled',
+          details: null,
+          correlationId: request.id
+        }
+      });
+    }
+
+    const providedSecret = request.headers['x-bootstrap-secret'];
+    if (providedSecret !== fastify.appConfig.bootstrapSecret) {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Invalid bootstrap secret',
+          details: null,
+          correlationId: request.id
+        }
+      });
+    }
+
     const existingCount = fastify.appDb.sqlite.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
     if (existingCount.count > 0) {
       return reply.status(409).send({

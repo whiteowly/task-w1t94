@@ -90,4 +90,174 @@ describe('auth routes', () => {
     const unauthorized = await app.inject({ method: 'GET', url: '/v1/auth/me' });
     expect(unauthorized.statusCode).toBe(401);
   });
+
+  it('bootstrap-admin succeeds on empty DB with valid secret', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath, { bootstrapSecret: 'test-secret-123' }),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/bootstrap-admin',
+      headers: { 'x-bootstrap-secret': 'test-secret-123' },
+      payload: { username: 'myadmin', password: 'longpassword' }
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.json().user.username).toBe('myadmin');
+    expect(res.json().user.role).toBe('administrator');
+  });
+
+  it('bootstrap-admin blocked without secret header', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath, { bootstrapSecret: 'test-secret-123' }),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/bootstrap-admin',
+      payload: { username: 'myadmin', password: 'longpassword' }
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.message).toBe('Invalid bootstrap secret');
+  });
+
+  it('bootstrap-admin blocked with wrong secret', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath, { bootstrapSecret: 'test-secret-123' }),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/bootstrap-admin',
+      headers: { 'x-bootstrap-secret': 'wrong-secret' },
+      payload: { username: 'myadmin', password: 'longpassword' }
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.message).toBe('Invalid bootstrap secret');
+  });
+
+  it('bootstrap-admin blocked when users exist', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    await database.db.insert(users).values({
+      username: 'existing',
+      passwordHash: hashPassword('some-password'),
+      role: 'administrator'
+    });
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath, { bootstrapSecret: 'test-secret-123' }),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/bootstrap-admin',
+      headers: { 'x-bootstrap-secret': 'test-secret-123' },
+      payload: { username: 'myadmin', password: 'longpassword' }
+    });
+
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('bootstrap-admin blocked when disabled (no BOOTSTRAP_SECRET)', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/bootstrap-admin',
+      payload: { username: 'myadmin', password: 'longpassword' }
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.message).toBe('Bootstrap is disabled');
+  });
+
+  it('session revoke: logout invalidates the token', async () => {
+    const { database, dbPath } = createMigratedTestDb();
+    cleanup.push(() => database.close());
+
+    await database.db.insert(users).values({
+      username: 'revokeuser',
+      passwordHash: hashPassword('pass12345678'),
+      role: 'sales_associate'
+    });
+
+    const app = await buildServer({
+      config: buildTestConfig(dbPath),
+      database
+    });
+    cleanup.push(() => {
+      void app.close();
+    });
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'revokeuser', password: 'pass12345678' }
+    });
+    expect(login.statusCode).toBe(200);
+    const token = login.json().token as string;
+
+    // Confirm token works
+    const meBefore = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: { authorization: `Bearer ${token}` }
+    });
+    expect(meBefore.statusCode).toBe(200);
+
+    // Logout (revoke session)
+    const logout = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/logout',
+      headers: { authorization: `Bearer ${token}` }
+    });
+    expect(logout.statusCode).toBe(204);
+
+    // Confirm token no longer works
+    const meAfter = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: { authorization: `Bearer ${token}` }
+    });
+    expect(meAfter.statusCode).toBe(401);
+  });
 });

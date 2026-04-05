@@ -43,6 +43,13 @@
       "when": 1740000005000,
       "tag": "0005_class_proctor_assignments",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1740000006000,
+      "tag": "0006_add_check_constraints",
+      "breakpoints": true
     }
   ]
 }

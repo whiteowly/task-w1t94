@@ -34,7 +34,8 @@ export const permissions = {
   },
   audit: {
     readLogs: 'audit.read_logs',
-    readReconciliationExports: 'audit.read_reconciliation_exports'
+    readReconciliationExports: 'audit.read_reconciliation_exports',
+    readReconciliationRecords: 'audit.read_reconciliation_records'
   }
 } as const;
 
@@ -53,7 +54,8 @@ export const permissionValues = [
   permissions.charging.manage,
   permissions.reconciliation.manage,
   permissions.audit.readLogs,
-  permissions.audit.readReconciliationExports
+  permissions.audit.readReconciliationExports,
+  permissions.audit.readReconciliationRecords
 ] as const;
 
 export type Permission = (typeof permissionValues)[number];
@@ -72,7 +74,8 @@ export const rolePermissionMatrix: Record<UserRole, Permission[]> = {
     permissions.promotions.manage,
     permissions.pricing.managePolicies,
     permissions.charging.manage,
-    permissions.reconciliation.manage
+    permissions.reconciliation.manage,
+    permissions.audit.readReconciliationRecords
   ],
   operations_manager: [...allAuthPermissions, permissions.courses.manageSchedules, permissions.charging.manage],
   proctor: [...allAuthPermissions, permissions.attendance.record],

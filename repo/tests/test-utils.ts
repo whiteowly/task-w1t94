@@ -6,7 +6,7 @@ import { createDatabase } from '../src/platform/db/client';
 import { runMigrations } from '../src/platform/db/migrate';
 import type { AppConfig } from '../src/platform/config';
 
-export const buildTestConfig = (dbPath: string): AppConfig => ({
+export const buildTestConfig = (dbPath: string, opts?: { bootstrapSecret?: string }): AppConfig => ({
   nodeEnv: 'test',
   host: '127.0.0.1',
   port: 0,
@@ -16,7 +16,8 @@ export const buildTestConfig = (dbPath: string): AppConfig => ({
   facilityTimezone: 'UTC',
   encryptionKey: Buffer.alloc(32, 1),
   sessionTtlHours: 12,
-  schedulerEnabled: false
+  schedulerEnabled: false,
+  bootstrapSecret: opts?.bootstrapSecret
 });
 
 export const createMigratedTestDb = () => {

@@ -15,7 +15,8 @@ const configSchema = z
     SCHEDULER_ENABLED: z
       .enum(['true', 'false'])
       .default('true')
-      .transform((value) => value === 'true')
+      .transform((value) => value === 'true'),
+    BOOTSTRAP_SECRET: z.string().optional()
   })
   .superRefine((raw, ctx) => {
     try {
@@ -57,6 +58,7 @@ export type AppConfig = {
   encryptionKey: Buffer;
   sessionTtlHours: number;
   schedulerEnabled: boolean;
+  bootstrapSecret: string | undefined;
 };
 
 export const loadConfig = (env: NodeJS.ProcessEnv = process.env): AppConfig => {
@@ -78,6 +80,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): AppConfig => {
     facilityTimezone: value.FACILITY_TIMEZONE,
     encryptionKey: Buffer.from(value.APP_ENCRYPTION_KEY_B64, 'base64'),
     sessionTtlHours: value.SESSION_TTL_HOURS,
-    schedulerEnabled: value.SCHEDULER_ENABLED
+    schedulerEnabled: value.SCHEDULER_ENABLED,
+    bootstrapSecret: value.BOOTSTRAP_SECRET
   };
 };

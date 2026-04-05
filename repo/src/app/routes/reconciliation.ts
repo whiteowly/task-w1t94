@@ -32,7 +32,7 @@ const requireReconciliationReadPermission = async (request: FastifyRequest): Pro
 
   const allowed =
     roleHasPermission(request.auth.role, permissions.reconciliation.manage) ||
-    roleHasPermission(request.auth.role, permissions.audit.readReconciliationExports);
+    roleHasPermission(request.auth.role, permissions.audit.readReconciliationRecords);
 
   if (!allowed) {
     throw forbidden();

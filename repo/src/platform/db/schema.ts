@@ -128,6 +128,7 @@ export const promotions = sqliteTable(
   },
   (table) => ({
     priorityRangeCheck: check('promotions_priority_check', sql`${table.priority} between 1 and 100`),
+    typeCheck: check('promotions_type_check', sql`${table.type} in ('spend_and_save','percentage_discount','amount_discount','bundle','member_pricing_tier','voucher')`),
     validityIdx: index('promotions_validity_idx').on(table.validFromUtcEpoch, table.validToUtcEpoch),
     activeIdx: index('promotions_active_idx').on(table.active)
   })
@@ -194,6 +195,7 @@ export const classInstances = sqliteTable(
   (table) => ({
     capacityRangeCheck: check('class_instances_capacity_check', sql`${table.capacity} between 1 and 200`),
     waitlistRangeCheck: check('class_instances_waitlist_cap_check', sql`${table.waitlistCap} between 0 and 50`),
+    publishStateCheck: check('class_instances_publish_state_check', sql`${table.publishState} in ('unpublished','published')`),
     startsAtIdx: index('class_instances_starts_at_idx').on(table.startsAt)
   })
 );
@@ -250,6 +252,7 @@ export const enrollments = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(nowEpoch)
   },
   (table) => ({
+    statusCheck: check('enrollments_status_check', sql`${table.status} in ('enrolled','waitlisted','canceled')`),
     classStatusIdx: index('enrollments_class_status_idx').on(table.classInstanceId, table.status),
     classCustomerUnique: uniqueIndex('enrollments_class_customer_unique').on(table.classInstanceId, table.customerId)
   })
@@ -296,6 +299,7 @@ export const chargingSessions = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(nowEpoch)
   },
   (table) => ({
+    statusCheck: check('charging_sessions_status_check', sql`${table.status} in ('started','ended','exception','compensated')`),
     statusIdx: index('charging_sessions_status_idx').on(table.status)
   })
 );
@@ -323,6 +327,7 @@ export const orders = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(nowEpoch)
   },
   (table) => ({
+    statusCheck: check('orders_status_check', sql`${table.status} in ('draft','finalized','canceled','refunded')`),
     statusIdx: index('orders_status_idx').on(table.status),
     draftExpiryIdx: index('orders_draft_expiry_idx').on(table.draftExpiresAt)
   })
@@ -414,6 +419,7 @@ export const reconciliationRecords = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(nowEpoch)
   },
   (table) => ({
+    stateCheck: check('reconciliation_records_state_check', sql`${table.state} in ('pending','reviewed','exported','archived')`),
     stateIdx: index('reconciliation_records_state_idx').on(table.state)
   })
 );

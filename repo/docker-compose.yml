@@ -1,0 +1,60 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: /data/app.db
+      EXPORT_DIR: /data/exports
+      FACILITY_TIMEZONE: UTC
+      SCHEDULER_ENABLED: "true"
+    command: >-
+      bash -lc 'if [ -z "$${APP_ENCRYPTION_KEY_B64:-}" ]; then
+      export APP_ENCRYPTION_KEY_B64="$$(node -e "process.stdout.write(require(\"crypto\").randomBytes(32).toString(\"base64\"))")";
+      fi &&
+      ./init_db.sh &&
+      exec node dist/app/server.js'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "const http=require('http');
+          const req=http.get({host:'127.0.0.1',port:3000,path:'/health/ready',timeout:3000},(res)=>{process.exit(res.statusCode===200?0:1)});
+          req.on('error',()=>process.exit(1));
+          req.on('timeout',()=>{req.destroy();process.exit(1);});"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    ports:
+      - "127.0.0.1::3000"
+    volumes:
+      - app-data:/data
+    restart: unless-stopped
+
+  test:
+    profiles:
+      - test
+    build:
+      context: .
+      target: test
+    environment:
+      NODE_ENV: test
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: /tmp/facility-api-tests.db
+      EXPORT_DIR: /tmp/facility-api-exports
+      FACILITY_TIMEZONE: UTC
+      SCHEDULER_ENABLED: "false"
+    command: >-
+      bash -lc 'if [ -z "$${APP_ENCRYPTION_KEY_B64:-}" ]; then
+      export APP_ENCRYPTION_KEY_B64="$$(node -e "process.stdout.write(require(\"crypto\").randomBytes(32).toString(\"base64\"))")";
+      fi &&
+      ./init_db.sh &&
+      exec npm run test:ci'
+
+volumes:
+  app-data:

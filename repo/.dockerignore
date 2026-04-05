@@ -3,6 +3,6 @@ dist
 coverage
 .git
 data
-exports
+/exports
 README.md
 docs

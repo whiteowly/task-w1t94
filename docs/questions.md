@@ -1,97 +1,48 @@
-## Item 1: Runtime language selection on Node.js
+# TrailForge Clarification Questions
 
-### What was unclear
-The prompt fixes the backend stack to Node.js and Fastify, but it does not explicitly choose JavaScript or TypeScript for implementation.
+## Business Logic Questions Log
 
-### Interpretation
-The API still needs a concrete language choice so the persistence, validation, and service contracts can be designed consistently.
+### 1. Clarification Defaults for Planning
+- Question: Can the drafted clarification defaults be used for planning?
+- My Understanding: The prompt was large enough that planning needed explicit confirmation that the clarification package was acceptable. We needed to lock this in rather than carrying uncertainty forward into the planning phase.
+- Solution: Yes. Proceed with the drafted defaults, allowing planning to start from the approved clarification brief instead of an uncertain baseline.
 
-### Decision
-Implement the Fastify backend in TypeScript on Node.js.
+### 2. Offline Deployment Style
+- Question: What offline deployment style should the initial build assume?
+- My Understanding: The prompt required a fully offline system but did not force or prescribe a specific local deployment mechanism.
+- Solution: Use Docker Compose as the default offline deployment path. The project runtime contract will use docker compose up --build as the primary launch command.
 
-### Why this is reasonable
-TypeScript is a prompt-faithful safe default for a large rules-heavy API with RBAC, promotions, pricing, reconciliation, and audit behavior because it improves correctness without changing the requested platform.
+### 3. Excel Support Handling
+- Question: How should Excel support be handled in the first implementation pass?
+- My Understanding: The prompt required CSV/Excel support but did not specify whether legacy .xls format support was necessary alongside modern formats.
+- Solution: Support .xlsx plus CSV, and do not include legacy .xls in the first pass. Import/export planning and validation will target the newer .xlsx standard.
 
-## Item 2: Authentication and session shape
+### 4. Frontend Implementation Stack
+- Question: What specific technologies should be used for the frontend implementation?
+- My Understanding: The prompt already required a Vue workspace and a modern frontend framework. We need a default that keeps the implementation conventional and robust without changing the product scope.
+- Solution: Use Vue 3 + Vite + TypeScript + Vue Router + Pinia.
 
-### What was unclear
-The prompt requires local username/password login and session issuance, but it does not define whether sessions are cookie-based, bearer-token based, or fully server-backed.
+### 5. Backend Implementation Stack
+- Question: What specific technologies should be used for the backend implementation?
+- My Understanding: The prompt already required FastAPI and PostgreSQL. We need to define the expected persistence, schema, and migration foundations based on those requirements.
+- Solution: Use FastAPI + SQLAlchemy + Alembic + Pydantic.
 
-### Interpretation
-The system needs a concrete offline-friendly session model that works for internal client systems and ordinary API consumers without external identity services.
+### 6. Offline Sync Package Shape
+- Question: How should the file structure for the offline sync package be defined?
+- My Understanding: The prompt required an offline sync package for cross-device transfer but did not define the specific file structure or mechanism for this package.
+- Solution: Use a versioned portable archive containing manifest metadata, serialized payloads, checksums, and referenced assets.
 
-### Decision
-Use local username/password authentication with salted password hashing, issue opaque bearer session tokens, persist only token hashes and session metadata server-side, and expose role/permission discovery from the authenticated session context.
+### 7. HTTPS Setup Approach
+- Question: How should HTTPS be handled for a local-network offline environment?
+- My Understanding: The prompt required local-network HTTPS, so we need a practical, offline-safe way to satisfy this requirement without relying on external, internet-dependent certificate authorities.
+- Solution: Use a locally generated certificate workflow and explicitly document the trust/setup steps for the end user.
 
-### Why this is reasonable
-This stays fully local, supports revocation and auditability, and fits the prompt's explicit session-issuance requirement without introducing third-party auth dependencies.
+### 8. Non-Image Resource Preview Behavior
+- Question: How should resource previews be handled for non-image files?
+- My Understanding: The prompt required thumbnail previews and controlled media handling, but non-image assets inherently need a different presentation strategy than standard image files.
+- Solution: Use document preview/file cards for non-image assets, while preserving stronger thumbnail behavior where applicable for images.
 
-## Item 3: Promotion applicability coverage
-
-### What was unclear
-The prompt requires configurable applicability selectors for promotions, but it does not spell out the exact selector model across merchandise, courses, vouchers, and charging-related billing.
-
-### Interpretation
-Promotions need a consistent selector format that can express order-level, line-level, and service-specific applicability while preserving the requested offer types.
-
-### Decision
-Model applicability selectors as structured rule sets that can target specific SKUs, product categories, course categories, class instances, charging-session billing, customer membership tiers, and whole-order minimum spend conditions.
-
-### Why this is reasonable
-This covers the prompt's commerce and operations surfaces without narrowing eligibility logic to only one product family.
-
-## Item 4: Reconciliation state machine
-
-### What was unclear
-The prompt requires exportable reconciliation states and linear timestamped transitions, but it does not define the concrete states.
-
-### Interpretation
-The API needs a fixed internal lifecycle so exports and audit logs can reflect an enforceable, non-skippable reconciliation history.
-
-### Decision
-Use a linear reconciliation lifecycle of pending -> reviewed -> exported -> archived, with every transition recorded with actor and timestamp and with no backward or skipped transitions.
-
-### Why this is reasonable
-It satisfies the prompt's linear-transition requirement and gives auditors and internal client systems a concrete export contract.
-
-## Item 5: Local-time policy handling
-
-### What was unclear
-Promotion validity windows are explicitly stored in local time, but the prompt does not specify how the facility's local time zone is supplied.
-
-### Interpretation
-The system needs a deterministic facility-local clock policy so offer eligibility, schedules, and exports behave consistently.
-
-### Decision
-Use a single configured facility IANA time zone for all local-time business rules, with timestamps stored in UTC where appropriate and converted at API boundaries or rule-evaluation boundaries when local-time semantics are required.
-
-### Why this is reasonable
-This preserves the prompt's local-time semantics while avoiding ambiguous server-local behavior.
-
-## Item 6: Encryption key provisioning
-
-### What was unclear
-The prompt requires AES-GCM encryption for sensitive fields, but it does not define how the encryption key is provided in a local offline deployment.
-
-### Interpretation
-The backend needs a runtime key source compatible with Docker and local execution while avoiding committed secrets or env files in the repo.
-
-### Decision
-Use a runtime-provided symmetric encryption key supplied through process or container configuration, with deterministic non-secret test defaults created outside source-controlled env files for local verification paths.
-
-### Why this is reasonable
-This satisfies the encryption requirement, works offline, and stays aligned with the repository rule forbidding committed env files.
-
-## Item 7: Export scheduling and storage contract
-
-### What was unclear
-The prompt requires daily CSV exports for analytics and reconciliation on the local filesystem, but it does not specify how those exports are triggered or organized.
-
-### Interpretation
-The backend needs a concrete offline export contract so internal client systems can locate persisted exports reliably.
-
-### Decision
-Generate daily analytics and reconciliation CSV exports through an in-process scheduler, store them under a dedicated local exports directory with stable dated filenames plus persisted export-reference records, and expose download metadata through report and reconciliation endpoints.
-
-### Why this is reasonable
-This stays fully offline, matches the persisted export-reference requirement, and gives auditors/internal systems a predictable handoff surface.
+### 9. Reserved Outbound Connectors
+- Question: How should SMS, email, and push notifications be implemented in an offline-first system?
+- My Understanding: The prompt explicitly stated that these connectors should be reserved for future use, but they are not required for core offline operations.
+- Solution: Keep SMS, email, and push as provider abstraction points, implementing them as disabled placeholders in v1.
